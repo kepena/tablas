@@ -31,6 +31,11 @@
         <span class="menu-title">Quiz contra reloj</span>
         <span class="menu-desc">Responde rápido, gana puntos</span>
       </button>
+      <button class="menu-card" data-view="view-final">
+        <span class="menu-icon">☠️</span>
+        <span class="menu-title">Reto Final</span>
+        <span class="menu-desc">Sin tiempo, un error y pierdes</span>
+      </button>
       <button class="menu-card" data-view="view-multiple">
         <span class="menu-icon">🎯</span>
         <span class="menu-title">Opción múltiple</span>
@@ -112,6 +117,39 @@
         <p class="results-score">Puntos: <strong id="finalScore">0</strong></p>
         <p class="results-detail" id="resultsDetail"></p>
         <button id="retryQuiz" class="btn-primary">🔁 Jugar otra vez</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CHALLENGE (sin tiempo, una sola vida) -->
+  <section id="view-final" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Reto Final</h2>
+
+    <div id="finalSetup">
+      <p class="quiz-instructions">Sin tiempo, pero con una sola vida: si fallas una, se acaba. Elige tus tablas:</p>
+      <div class="table-picker multi" id="finalTablePicker"></div>
+      <p class="final-record">🏆 Tu récord: <strong id="finalRecordSetup">0</strong> aciertos seguidos</p>
+      <button id="startFinal" class="btn-primary btn-large">▶ Empezar reto</button>
+    </div>
+
+    <div id="finalArea" class="hidden">
+      <div class="quiz-hud">
+        <div class="hud-item">✅ <span id="finalStreak">0</span></div>
+        <div class="hud-item">🏆 <span id="finalRecord">0</span></div>
+        <div class="hud-item">❤️ 1 vida</div>
+      </div>
+      <div class="quiz-question" id="finalQuestion">? × ? = </div>
+      <input type="number" id="finalAnswer" class="quiz-input" inputmode="numeric" autocomplete="off" placeholder="?">
+      <div class="quiz-feedback" id="finalFeedback"></div>
+    </div>
+
+    <div id="finalResults" class="hidden">
+      <div class="results-box">
+        <h3 id="finalResultsTitle">💀 ¡Fin del reto!</h3>
+        <p class="results-score">Respuestas seguidas: <strong id="finalResultScore">0</strong></p>
+        <p class="results-detail" id="finalRecordDetail"></p>
+        <button id="retryFinal" class="btn-primary">🔁 Intentar de nuevo</button>
       </div>
     </div>
   </section>

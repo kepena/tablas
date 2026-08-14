@@ -176,6 +176,12 @@ html, body {
 
 h2 { font-size: 1.4rem; margin: 4px 0 14px; }
 .quiz-instructions { color: var(--text-dim); margin-bottom: 12px; }
+.final-record {
+  text-align: center;
+  color: var(--yellow);
+  font-weight: 800;
+  margin: 4px 0 4px;
+}
 
 /* TABLE PICKER */
 .table-picker {

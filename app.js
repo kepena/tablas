@@ -364,6 +364,121 @@ function makeDistractors(a, b, correct) {
   return pool.slice(0, 3);
 }
 
+// ---------- Vista: Reto Final (sin tiempo, una sola vida) ----------
+const FINAL_RECORD_KEY = "tablas_final_record_v1";
+let finalTables = new Set();
+let finalActiveTables = [];
+let finalStreak = 0;
+let finalRecord = Number(localStorage.getItem(FINAL_RECORD_KEY)) || 0;
+let finalCurrent = { a: 0, b: 0 };
+let finalOver = false;
+
+const finalPicker = document.getElementById("finalTablePicker");
+buildTablePicker(finalPicker, true, (t, btn) => {
+  if (finalTables.has(t)) {
+    finalTables.delete(t);
+    btn.classList.remove("selected");
+  } else {
+    finalTables.add(t);
+    btn.classList.add("selected");
+  }
+});
+
+document.getElementById("finalRecordSetup").textContent = finalRecord;
+
+document.getElementById("startFinal").addEventListener("click", () => { Sound.click(); startFinal(); });
+document.getElementById("retryFinal").addEventListener("click", () => {
+  Sound.click();
+  document.getElementById("finalResults").classList.add("hidden");
+  document.getElementById("finalSetup").classList.remove("hidden");
+  document.getElementById("finalRecordSetup").textContent = finalRecord;
+});
+
+function startFinal() {
+  finalActiveTables = finalTables.size > 0 ? [...finalTables] : TABLES;
+  finalStreak = 0;
+  finalOver = false;
+
+  document.getElementById("finalSetup").classList.add("hidden");
+  document.getElementById("finalResults").classList.add("hidden");
+  document.getElementById("finalArea").classList.remove("hidden");
+  document.getElementById("finalStreak").textContent = "0";
+  document.getElementById("finalRecord").textContent = finalRecord;
+
+  nextFinalQuestion();
+
+  const answerInput = document.getElementById("finalAnswer");
+  answerInput.value = "";
+  answerInput.focus();
+  answerInput.onkeydown = (e) => {
+    if (e.key === "Enter") checkFinalAnswer();
+  };
+  answerInput.oninput = () => {
+    const val = answerInput.value;
+    if (val !== "" && val.length >= String(finalCurrent.a * finalCurrent.b).length) {
+      checkFinalAnswer();
+    }
+  };
+}
+
+function nextFinalQuestion() {
+  const table = finalActiveTables[Math.floor(Math.random() * finalActiveTables.length)];
+  const factor = FACTORS[Math.floor(Math.random() * FACTORS.length)];
+  finalCurrent = { a: table, b: factor };
+  document.getElementById("finalQuestion").textContent = `${table} × ${factor} = ?`;
+  document.getElementById("finalAnswer").value = "";
+  const feedback = document.getElementById("finalFeedback");
+  feedback.textContent = "";
+  feedback.className = "quiz-feedback";
+}
+
+function checkFinalAnswer() {
+  if (finalOver) return;
+  const input = document.getElementById("finalAnswer");
+  if (input.value === "") return;
+
+  const val = Number(input.value);
+  const correctVal = finalCurrent.a * finalCurrent.b;
+  const isCorrect = val === correctVal;
+  recordAnswer(finalCurrent.a, isCorrect);
+
+  const feedback = document.getElementById("finalFeedback");
+  if (isCorrect) {
+    Sound.correct();
+    finalStreak += 1;
+    document.getElementById("finalStreak").textContent = finalStreak;
+    feedback.textContent = "¡Correcto! ✅";
+    feedback.className = "quiz-feedback correct";
+    setTimeout(nextFinalQuestion, 300);
+  } else {
+    Sound.buzzer();
+    feedback.textContent = `Era ${correctVal} 💥`;
+    feedback.className = "quiz-feedback wrong";
+    endFinal();
+  }
+}
+
+function endFinal() {
+  finalOver = true;
+  const previousRecord = finalRecord;
+  const isNewRecord = finalStreak > finalRecord;
+  if (isNewRecord) {
+    finalRecord = finalStreak;
+    localStorage.setItem(FINAL_RECORD_KEY, String(finalRecord));
+  }
+
+  setTimeout(() => {
+    if (isNewRecord) Sound.victory();
+    document.getElementById("finalArea").classList.add("hidden");
+    document.getElementById("finalResults").classList.remove("hidden");
+    document.getElementById("finalResultScore").textContent = finalStreak;
+    document.getElementById("finalResultsTitle").textContent = isNewRecord ? "🏆 ¡Nuevo récord!" : "💀 ¡Fin del reto!";
+    document.getElementById("finalRecordDetail").textContent = isNewRecord
+      ? `Superaste tu récord anterior de ${previousRecord}.`
+      : `Tu récord sigue siendo ${finalRecord}. ¡Sigue practicando!`;
+  }, 700);
+}
+
 // ---------- Vista: Opción múltiple ----------
 let mcTables = new Set();
 let mcActiveTables = [];
