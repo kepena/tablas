@@ -370,6 +370,17 @@ let finalStreak = 0;
 let finalRecord = Number(localStorage.getItem(FINAL_RECORD_KEY)) || 0;
 let finalCurrent = { a: 0, b: 0 };
 let finalOver = false;
+let finalQueue = [];
+
+function buildFinalQueue() {
+  const pairs = [];
+  TABLES.forEach(a => FACTORS.forEach(b => pairs.push({ a, b })));
+  for (let i = pairs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+  }
+  return pairs;
+}
 
 document.getElementById("finalRecordSetup").textContent = finalRecord;
 
@@ -384,6 +395,7 @@ document.getElementById("retryFinal").addEventListener("click", () => {
 function startFinal() {
   finalStreak = 0;
   finalOver = false;
+  finalQueue = buildFinalQueue();
 
   document.getElementById("finalSetup").classList.add("hidden");
   document.getElementById("finalResults").classList.add("hidden");
@@ -408,14 +420,31 @@ function startFinal() {
 }
 
 function nextFinalQuestion() {
-  const table = TABLES[Math.floor(Math.random() * TABLES.length)];
-  const factor = FACTORS[Math.floor(Math.random() * FACTORS.length)];
+  if (finalQueue.length === 0) {
+    endFinalPerfect();
+    return;
+  }
+  const { a: table, b: factor } = finalQueue.pop();
   finalCurrent = { a: table, b: factor };
   document.getElementById("finalQuestion").textContent = `${table} × ${factor} = ?`;
   document.getElementById("finalAnswer").value = "";
   const feedback = document.getElementById("finalFeedback");
   feedback.textContent = "";
   feedback.className = "quiz-feedback";
+}
+
+function endFinalPerfect() {
+  finalOver = true;
+  finalRecord = Math.max(finalRecord, finalStreak);
+  localStorage.setItem(FINAL_RECORD_KEY, String(finalRecord));
+
+  Sound.victory();
+  document.getElementById("finalArea").classList.add("hidden");
+  document.getElementById("finalResults").classList.remove("hidden");
+  document.getElementById("finalResultScore").textContent = finalStreak;
+  document.getElementById("finalResultsTitle").textContent = "👑 ¡Las dominaste todas!";
+  document.getElementById("finalRecordDetail").textContent =
+    "Respondiste las 144 combinaciones sin fallar ni una. ¡Eres un maestro de las tablas!";
 }
 
 function checkFinalAnswer() {
