@@ -17,6 +17,65 @@ const TRICKS = {
 const TABLES = Array.from({ length: 12 }, (_, i) => i + 1);
 const FACTORS = Array.from({ length: 12 }, (_, i) => i + 1);
 
+// ---------- Sonidos (generados con Web Audio API, sin archivos externos) ----------
+const SOUND_KEY = "tablas_sound_enabled_v1";
+let soundEnabled = localStorage.getItem(SOUND_KEY) !== "false";
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+function playTone(freq, startTime, duration, type, peakGain) {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  const t0 = ctx.currentTime + startTime;
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(peakGain, t0 + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + duration + 0.05);
+}
+
+function playNotes(notes) {
+  if (!soundEnabled) return;
+  notes.forEach(([freq, start, dur, type, gain]) => playTone(freq, start, dur, type, gain));
+}
+
+const Sound = {
+  click: () => playNotes([[520, 0, 0.06, "square", 0.05]]),
+  flip: () => playNotes([[320, 0, 0.07, "triangle", 0.1], [440, 0.05, 0.08, "triangle", 0.08]]),
+  correct: () => playNotes([[523.25, 0, 0.1, "sine", 0.18], [659.25, 0.08, 0.12, "sine", 0.18], [783.99, 0.16, 0.18, "sine", 0.18]]),
+  wrong: () => playNotes([[220, 0, 0.16, "sawtooth", 0.14], [164.81, 0.1, 0.22, "sawtooth", 0.14]]),
+  match: () => playNotes([[659.25, 0, 0.1, "sine", 0.18], [880, 0.08, 0.16, "sine", 0.16]]),
+  buzzer: () => playNotes([[180, 0, 0.3, "sawtooth", 0.14], [140, 0.15, 0.35, "sawtooth", 0.14]]),
+  victory: () => playNotes([
+    [523.25, 0, 0.12, "sine", 0.2],
+    [659.25, 0.12, 0.12, "sine", 0.2],
+    [783.99, 0.24, 0.12, "sine", 0.2],
+    [1046.5, 0.36, 0.32, "sine", 0.22],
+  ]),
+};
+
+const soundToggleBtn = document.getElementById("soundToggle");
+function updateSoundToggleUI() {
+  soundToggleBtn.textContent = soundEnabled ? "🔊" : "🔇";
+  soundToggleBtn.setAttribute("aria-label", soundEnabled ? "Silenciar sonidos" : "Activar sonidos");
+}
+soundToggleBtn.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem(SOUND_KEY, String(soundEnabled));
+  updateSoundToggleUI();
+  if (soundEnabled) { getAudioCtx(); Sound.click(); }
+});
+updateSoundToggleUI();
+
 // ---------- Navegación entre vistas ----------
 function showView(id) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -24,7 +83,10 @@ function showView(id) {
 }
 
 document.querySelectorAll("[data-view]").forEach(el => {
-  el.addEventListener("click", () => showView(el.dataset.view));
+  el.addEventListener("click", () => {
+    Sound.click();
+    showView(el.dataset.view);
+  });
 });
 
 // ---------- Progreso (localStorage) ----------
@@ -76,6 +138,7 @@ function renderProgress() {
 }
 
 document.getElementById("resetProgress").addEventListener("click", () => {
+  Sound.click();
   if (confirm("¿Seguro que quieres borrar todo tu progreso?")) {
     localStorage.removeItem(PROGRESS_KEY);
     renderProgress();
@@ -93,7 +156,7 @@ function buildTablePicker(container, multi, onChange) {
     btn.className = "table-btn";
     btn.textContent = t;
     btn.dataset.table = t;
-    btn.addEventListener("click", () => onChange(t, btn));
+    btn.addEventListener("click", () => { Sound.click(); onChange(t, btn); });
     container.appendChild(btn);
   });
 }
@@ -127,14 +190,17 @@ function renderFlashcard() {
 
 document.getElementById("flashcard").addEventListener("click", () => {
   document.getElementById("flashcard").classList.toggle("flipped");
+  Sound.flip();
 });
 
 document.getElementById("nextCard").addEventListener("click", () => {
+  Sound.click();
   practiceIndex = (practiceIndex + 1) % FACTORS.length;
   renderFlashcard();
 });
 
 document.getElementById("prevCard").addEventListener("click", () => {
+  Sound.click();
   practiceIndex = (practiceIndex - 1 + FACTORS.length) % FACTORS.length;
   renderFlashcard();
 });
@@ -159,8 +225,9 @@ buildTablePicker(quizPicker, true, (t, btn) => {
   }
 });
 
-document.getElementById("startQuiz").addEventListener("click", startQuiz);
+document.getElementById("startQuiz").addEventListener("click", () => { Sound.click(); startQuiz(); });
 document.getElementById("retryQuiz").addEventListener("click", () => {
+  Sound.click();
   document.getElementById("quizResults").classList.add("hidden");
   document.getElementById("quizSetup").classList.remove("hidden");
 });
@@ -227,6 +294,7 @@ function checkAnswer(activeTables) {
   recordAnswer(quizCurrent.a, isCorrect);
 
   if (isCorrect) {
+    Sound.correct();
     quizStreak += 1;
     const bonus = quizStreak >= 5 ? 2 : 1;
     quizScore += bonus;
@@ -235,6 +303,7 @@ function checkAnswer(activeTables) {
     feedback.textContent = quizStreak >= 5 ? `¡Racha de ${quizStreak}! 🔥 +${bonus} (+2s)` : "¡Correcto! ✅ +2s";
     feedback.className = "quiz-feedback correct";
   } else {
+    Sound.wrong();
     quizStreak = 0;
     feedback.textContent = `Era ${correctVal} 😅`;
     feedback.className = "quiz-feedback wrong";
@@ -255,6 +324,7 @@ function checkAnswer(activeTables) {
 
 function endQuiz(activeTables) {
   clearInterval(quizTimer);
+  Sound.buzzer();
   document.getElementById("quizArea").classList.add("hidden");
   document.getElementById("quizResults").classList.remove("hidden");
   document.getElementById("finalScore").textContent = quizScore;
@@ -315,8 +385,9 @@ buildTablePicker(mcPicker, true, (t, btn) => {
   }
 });
 
-document.getElementById("startMC").addEventListener("click", startMC);
+document.getElementById("startMC").addEventListener("click", () => { Sound.click(); startMC(); });
 document.getElementById("retryMC").addEventListener("click", () => {
+  Sound.click();
   document.getElementById("mcResults").classList.add("hidden");
   document.getElementById("mcSetup").classList.remove("hidden");
 });
@@ -385,11 +456,13 @@ function selectMCOption(btn, val, correct) {
 
   const feedback = document.getElementById("mcFeedback");
   if (isCorrect) {
+    Sound.correct();
     mcStreak += 1;
     mcScore += 1;
     feedback.textContent = "¡Correcto! ✅";
     feedback.className = "quiz-feedback correct";
   } else {
+    Sound.wrong();
     mcStreak = 0;
     btn.classList.add("wrong");
     feedback.textContent = `Era ${correct} 😅`;
@@ -402,6 +475,7 @@ function selectMCOption(btn, val, correct) {
 }
 
 function endMC() {
+  Sound.victory();
   document.getElementById("mcArea").classList.add("hidden");
   document.getElementById("mcResults").classList.remove("hidden");
   document.getElementById("mcFinalScore").textContent = mcScore;
@@ -436,8 +510,9 @@ buildTablePicker(tfPicker, true, (t, btn) => {
   }
 });
 
-document.getElementById("startTF").addEventListener("click", startTF);
+document.getElementById("startTF").addEventListener("click", () => { Sound.click(); startTF(); });
 document.getElementById("retryTF").addEventListener("click", () => {
+  Sound.click();
   document.getElementById("tfResults").classList.add("hidden");
   document.getElementById("tfSetup").classList.remove("hidden");
 });
@@ -492,11 +567,13 @@ function answerTF(userSaysTrue) {
 
   const feedback = document.getElementById("tfFeedback");
   if (isCorrect) {
+    Sound.correct();
     tfStreak += 1;
     tfScore += 1;
     feedback.textContent = "¡Correcto! ✅";
     feedback.className = "quiz-feedback correct";
   } else {
+    Sound.wrong();
     tfStreak = 0;
     const realCorrect = tfCurrent.a * tfCurrent.b;
     feedback.textContent = tfCurrent.isTrue ? "¡Era verdad! 😅" : `Era falso, es ${realCorrect} 😅`;
@@ -509,6 +586,7 @@ function answerTF(userSaysTrue) {
 }
 
 function endTF() {
+  Sound.victory();
   document.getElementById("tfArea").classList.add("hidden");
   document.getElementById("tfResults").classList.remove("hidden");
   document.getElementById("tfFinalScore").textContent = tfScore;
@@ -538,7 +616,7 @@ buildTablePicker(memoryPicker, false, (t, btn) => {
   startMemory(t);
 });
 
-document.getElementById("retryMemory").addEventListener("click", () => startMemory(memoryTable));
+document.getElementById("retryMemory").addEventListener("click", () => { Sound.click(); startMemory(memoryTable); });
 
 function startMemory(table) {
   memoryTable = table;
@@ -585,6 +663,7 @@ function flipMemoryCard(el) {
   if (memoryLocked) return;
   if (el.classList.contains("flipped") || el.classList.contains("matched")) return;
   el.classList.add("flipped");
+  Sound.flip();
 
   if (!memoryFirstCard) {
     memoryFirstCard = el;
@@ -598,6 +677,7 @@ function flipMemoryCard(el) {
 
   const isMatch = memoryFirstCard.dataset.pairId === memorySecondCard.dataset.pairId;
   if (isMatch) {
+    Sound.match();
     memoryFirstCard.classList.add("matched");
     memorySecondCard.classList.add("matched");
     memoryMatches += 1;
@@ -608,6 +688,7 @@ function flipMemoryCard(el) {
 
     if (memoryMatches === MEMORY_PAIRS) {
       setTimeout(() => {
+        Sound.victory();
         document.getElementById("memoryArea").classList.add("hidden");
         document.getElementById("memoryResults").classList.remove("hidden");
         document.getElementById("memoryDetail").textContent =
@@ -615,6 +696,7 @@ function flipMemoryCard(el) {
       }, 500);
     }
   } else {
+    Sound.wrong();
     setTimeout(() => {
       memoryFirstCard.classList.remove("flipped");
       memorySecondCard.classList.remove("flipped");
