@@ -230,7 +230,9 @@ function checkAnswer(activeTables) {
     quizStreak += 1;
     const bonus = quizStreak >= 5 ? 2 : 1;
     quizScore += bonus;
-    feedback.textContent = quizStreak >= 5 ? `¡Racha de ${quizStreak}! 🔥 +${bonus}` : "¡Correcto! ✅";
+    quizTimeLeft += 2;
+    document.getElementById("quizTimer").textContent = quizTimeLeft;
+    feedback.textContent = quizStreak >= 5 ? `¡Racha de ${quizStreak}! 🔥 +${bonus} (+2s)` : "¡Correcto! ✅ +2s";
     feedback.className = "quiz-feedback correct";
   } else {
     quizStreak = 0;
@@ -267,6 +269,360 @@ function endQuiz(activeTables) {
     `Respondiste ${quizAttempted} preguntas de las tablas: ${activeTables.sort((a,b)=>a-b).join(", ")}.`;
 
   renderProgress();
+}
+
+// ---------- Utilidad: generar respuestas falsas creíbles ----------
+function makeDistractors(a, b, correct) {
+  const candidates = new Set();
+  const tries = [
+    a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b,
+    correct + a, correct - a, correct + b, correct - b,
+    correct + 1, correct - 1, correct + 2, correct - 2,
+  ];
+  tries.forEach(v => { if (v > 0 && v !== correct) candidates.add(v); });
+  let extra = 3;
+  while (candidates.size < 3) {
+    const v = correct + extra;
+    if (v > 0 && v !== correct) candidates.add(v);
+    extra += 1;
+  }
+  const pool = [...candidates];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 3);
+}
+
+// ---------- Vista: Opción múltiple ----------
+let mcTables = new Set();
+let mcActiveTables = [];
+let mcScore = 0;
+let mcStreak = 0;
+let mcRoundNum = 0;
+let mcCurrent = { a: 0, b: 0 };
+let mcLocked = false;
+const MC_TOTAL = 10;
+
+const mcPicker = document.getElementById("mcTablePicker");
+buildTablePicker(mcPicker, true, (t, btn) => {
+  if (mcTables.has(t)) {
+    mcTables.delete(t);
+    btn.classList.remove("selected");
+  } else {
+    mcTables.add(t);
+    btn.classList.add("selected");
+  }
+});
+
+document.getElementById("startMC").addEventListener("click", startMC);
+document.getElementById("retryMC").addEventListener("click", () => {
+  document.getElementById("mcResults").classList.add("hidden");
+  document.getElementById("mcSetup").classList.remove("hidden");
+});
+
+function startMC() {
+  mcActiveTables = mcTables.size > 0 ? [...mcTables] : TABLES;
+  mcScore = 0;
+  mcStreak = 0;
+  mcRoundNum = 0;
+
+  document.getElementById("mcSetup").classList.add("hidden");
+  document.getElementById("mcResults").classList.add("hidden");
+  document.getElementById("mcArea").classList.remove("hidden");
+  document.getElementById("mcScore").textContent = "0";
+  document.getElementById("mcStreak").textContent = "0";
+
+  nextMCQuestion();
+}
+
+function nextMCQuestion() {
+  mcRoundNum += 1;
+  if (mcRoundNum > MC_TOTAL) { endMC(); return; }
+  document.getElementById("mcRound").textContent = mcRoundNum;
+
+  const table = mcActiveTables[Math.floor(Math.random() * mcActiveTables.length)];
+  const factor = FACTORS[Math.floor(Math.random() * FACTORS.length)];
+  const correct = table * factor;
+  mcCurrent = { a: table, b: factor };
+  document.getElementById("mcQuestion").textContent = `${table} × ${factor} = ?`;
+
+  const options = makeDistractors(table, factor, correct);
+  options.push(correct);
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+
+  const optionsEl = document.getElementById("mcOptions");
+  optionsEl.innerHTML = "";
+  mcLocked = false;
+  options.forEach(val => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = val;
+    btn.addEventListener("click", () => selectMCOption(btn, val, correct));
+    optionsEl.appendChild(btn);
+  });
+
+  const feedback = document.getElementById("mcFeedback");
+  feedback.textContent = "";
+  feedback.className = "quiz-feedback";
+}
+
+function selectMCOption(btn, val, correct) {
+  if (mcLocked) return;
+  mcLocked = true;
+
+  const isCorrect = val === correct;
+  recordAnswer(mcCurrent.a, isCorrect);
+
+  const optionsEl = document.getElementById("mcOptions");
+  [...optionsEl.children].forEach(b => {
+    b.disabled = true;
+    if (Number(b.textContent) === correct) b.classList.add("correct");
+  });
+
+  const feedback = document.getElementById("mcFeedback");
+  if (isCorrect) {
+    mcStreak += 1;
+    mcScore += 1;
+    feedback.textContent = "¡Correcto! ✅";
+    feedback.className = "quiz-feedback correct";
+  } else {
+    mcStreak = 0;
+    btn.classList.add("wrong");
+    feedback.textContent = `Era ${correct} 😅`;
+    feedback.className = "quiz-feedback wrong";
+  }
+  document.getElementById("mcScore").textContent = mcScore;
+  document.getElementById("mcStreak").textContent = mcStreak;
+
+  setTimeout(nextMCQuestion, 900);
+}
+
+function endMC() {
+  document.getElementById("mcArea").classList.add("hidden");
+  document.getElementById("mcResults").classList.remove("hidden");
+  document.getElementById("mcFinalScore").textContent = mcScore;
+
+  let title = "¡Buen intento!";
+  if (mcScore === MC_TOTAL) title = "¡Perfecto! 🌟🌟🌟";
+  else if (mcScore >= 8) title = "¡Excelente! 🌟";
+  else if (mcScore >= 5) title = "¡Vas bien! 💪";
+  document.getElementById("mcResultsTitle").textContent = title;
+
+  renderProgress();
+}
+
+// ---------- Vista: Verdadero o falso ----------
+let tfTables = new Set();
+let tfActiveTables = [];
+let tfScore = 0;
+let tfStreak = 0;
+let tfRoundNum = 0;
+let tfCurrent = { a: 0, b: 0, shown: 0, isTrue: true };
+let tfLocked = false;
+const TF_TOTAL = 10;
+
+const tfPicker = document.getElementById("tfTablePicker");
+buildTablePicker(tfPicker, true, (t, btn) => {
+  if (tfTables.has(t)) {
+    tfTables.delete(t);
+    btn.classList.remove("selected");
+  } else {
+    tfTables.add(t);
+    btn.classList.add("selected");
+  }
+});
+
+document.getElementById("startTF").addEventListener("click", startTF);
+document.getElementById("retryTF").addEventListener("click", () => {
+  document.getElementById("tfResults").classList.add("hidden");
+  document.getElementById("tfSetup").classList.remove("hidden");
+});
+document.getElementById("tfTrue").addEventListener("click", () => answerTF(true));
+document.getElementById("tfFalse").addEventListener("click", () => answerTF(false));
+
+function startTF() {
+  tfActiveTables = tfTables.size > 0 ? [...tfTables] : TABLES;
+  tfScore = 0;
+  tfStreak = 0;
+  tfRoundNum = 0;
+
+  document.getElementById("tfSetup").classList.add("hidden");
+  document.getElementById("tfResults").classList.add("hidden");
+  document.getElementById("tfArea").classList.remove("hidden");
+  document.getElementById("tfScore").textContent = "0";
+  document.getElementById("tfStreak").textContent = "0";
+
+  nextTFQuestion();
+}
+
+function nextTFQuestion() {
+  tfRoundNum += 1;
+  if (tfRoundNum > TF_TOTAL) { endTF(); return; }
+  document.getElementById("tfRound").textContent = tfRoundNum;
+
+  const table = tfActiveTables[Math.floor(Math.random() * tfActiveTables.length)];
+  const factor = FACTORS[Math.floor(Math.random() * FACTORS.length)];
+  const correct = table * factor;
+  const showTrue = Math.random() < 0.5;
+  const shown = showTrue ? correct : makeDistractors(table, factor, correct)[0];
+
+  tfCurrent = { a: table, b: factor, shown, isTrue: shown === correct };
+  document.getElementById("tfQuestion").textContent = `${table} × ${factor} = ${shown}`;
+
+  tfLocked = false;
+  document.getElementById("tfTrue").disabled = false;
+  document.getElementById("tfFalse").disabled = false;
+  const feedback = document.getElementById("tfFeedback");
+  feedback.textContent = "";
+  feedback.className = "quiz-feedback";
+}
+
+function answerTF(userSaysTrue) {
+  if (tfLocked) return;
+  tfLocked = true;
+
+  const isCorrect = userSaysTrue === tfCurrent.isTrue;
+  recordAnswer(tfCurrent.a, isCorrect);
+  document.getElementById("tfTrue").disabled = true;
+  document.getElementById("tfFalse").disabled = true;
+
+  const feedback = document.getElementById("tfFeedback");
+  if (isCorrect) {
+    tfStreak += 1;
+    tfScore += 1;
+    feedback.textContent = "¡Correcto! ✅";
+    feedback.className = "quiz-feedback correct";
+  } else {
+    tfStreak = 0;
+    const realCorrect = tfCurrent.a * tfCurrent.b;
+    feedback.textContent = tfCurrent.isTrue ? "¡Era verdad! 😅" : `Era falso, es ${realCorrect} 😅`;
+    feedback.className = "quiz-feedback wrong";
+  }
+  document.getElementById("tfScore").textContent = tfScore;
+  document.getElementById("tfStreak").textContent = tfStreak;
+
+  setTimeout(nextTFQuestion, 900);
+}
+
+function endTF() {
+  document.getElementById("tfArea").classList.add("hidden");
+  document.getElementById("tfResults").classList.remove("hidden");
+  document.getElementById("tfFinalScore").textContent = tfScore;
+
+  let title = "¡Buen intento!";
+  if (tfScore === TF_TOTAL) title = "¡Perfecto! 🌟🌟🌟";
+  else if (tfScore >= 8) title = "¡Excelente! 🌟";
+  else if (tfScore >= 5) title = "¡Vas bien! 💪";
+  document.getElementById("tfResultsTitle").textContent = title;
+
+  renderProgress();
+}
+
+// ---------- Vista: Memorama ----------
+let memoryTable = null;
+let memoryFirstCard = null;
+let memorySecondCard = null;
+let memoryMatches = 0;
+let memoryMoves = 0;
+let memoryLocked = false;
+const MEMORY_PAIRS = 6;
+
+const memoryPicker = document.getElementById("memoryTablePicker");
+buildTablePicker(memoryPicker, false, (t, btn) => {
+  memoryPicker.querySelectorAll(".table-btn").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  startMemory(t);
+});
+
+document.getElementById("retryMemory").addEventListener("click", () => startMemory(memoryTable));
+
+function startMemory(table) {
+  memoryTable = table;
+  memoryMatches = 0;
+  memoryMoves = 0;
+  memoryFirstCard = null;
+  memorySecondCard = null;
+  memoryLocked = false;
+
+  document.getElementById("memoryArea").classList.remove("hidden");
+  document.getElementById("memoryResults").classList.add("hidden");
+  document.getElementById("memoryMoves").textContent = "0";
+  document.getElementById("memoryMatches").textContent = "0";
+
+  const factors = [...FACTORS].sort(() => Math.random() - 0.5).slice(0, MEMORY_PAIRS);
+  const cards = [];
+  factors.forEach(f => {
+    cards.push({ pairId: `${table}x${f}`, label: `${table} × ${f}` });
+    cards.push({ pairId: `${table}x${f}`, label: `${table * f}` });
+  });
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+
+  const grid = document.getElementById("memoryGrid");
+  grid.innerHTML = "";
+  cards.forEach(card => {
+    const el = document.createElement("div");
+    el.className = "memory-card";
+    el.dataset.pairId = card.pairId;
+    el.innerHTML = `
+      <div class="memory-card-inner">
+        <div class="memory-face memory-face-back">?</div>
+        <div class="memory-face memory-face-front">${card.label}</div>
+      </div>
+    `;
+    el.addEventListener("click", () => flipMemoryCard(el));
+    grid.appendChild(el);
+  });
+}
+
+function flipMemoryCard(el) {
+  if (memoryLocked) return;
+  if (el.classList.contains("flipped") || el.classList.contains("matched")) return;
+  el.classList.add("flipped");
+
+  if (!memoryFirstCard) {
+    memoryFirstCard = el;
+    return;
+  }
+
+  memorySecondCard = el;
+  memoryLocked = true;
+  memoryMoves += 1;
+  document.getElementById("memoryMoves").textContent = memoryMoves;
+
+  const isMatch = memoryFirstCard.dataset.pairId === memorySecondCard.dataset.pairId;
+  if (isMatch) {
+    memoryFirstCard.classList.add("matched");
+    memorySecondCard.classList.add("matched");
+    memoryMatches += 1;
+    document.getElementById("memoryMatches").textContent = memoryMatches;
+    memoryFirstCard = null;
+    memorySecondCard = null;
+    memoryLocked = false;
+
+    if (memoryMatches === MEMORY_PAIRS) {
+      setTimeout(() => {
+        document.getElementById("memoryArea").classList.add("hidden");
+        document.getElementById("memoryResults").classList.remove("hidden");
+        document.getElementById("memoryDetail").textContent =
+          `Completaste la tabla del ${memoryTable} en ${memoryMoves} movimientos.`;
+      }, 500);
+    }
+  } else {
+    setTimeout(() => {
+      memoryFirstCard.classList.remove("flipped");
+      memorySecondCard.classList.remove("flipped");
+      memoryFirstCard = null;
+      memorySecondCard = null;
+      memoryLocked = false;
+    }, 900);
+  }
 }
 
 // ---------- Vista: Tabla pitagórica ----------

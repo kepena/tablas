@@ -254,6 +254,119 @@ h2 { font-size: 1.4rem; margin: 4px 0 14px; }
 
 .card-counter { color: var(--text-dim); font-weight: 700; font-size: 0.9rem; }
 
+/* MULTIPLE CHOICE */
+.option-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.option-btn {
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  color: var(--text);
+  font-weight: 800;
+  font-size: 1.4rem;
+  padding: 22px 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.option-btn:hover { border-color: var(--cyan); }
+.option-btn.correct {
+  background: linear-gradient(160deg, var(--green), #0f9d6b);
+  border-color: var(--green);
+  color: #05281c;
+}
+.option-btn.wrong {
+  background: linear-gradient(160deg, var(--red), #b91c1c);
+  border-color: var(--red);
+  color: white;
+}
+.option-btn:disabled { cursor: default; opacity: 0.9; }
+
+/* TRUE OR FALSE */
+.tf-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+.btn-tf {
+  border: none;
+  border-radius: 14px;
+  padding: 22px 0;
+  font-weight: 900;
+  font-size: 1.15rem;
+  cursor: pointer;
+  color: white;
+  transition: transform 0.1s ease, filter 0.15s ease;
+}
+.btn-tf:active { transform: scale(0.96); }
+.btn-tf-true { background: linear-gradient(160deg, var(--green), #0f9d6b); }
+.btn-tf-false { background: linear-gradient(160deg, var(--red), #b91c1c); }
+.btn-tf:disabled { opacity: 0.6; cursor: default; }
+
+/* MEMORY */
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.memory-card {
+  aspect-ratio: 1 / 1;
+  perspective: 800px;
+  cursor: pointer;
+}
+
+.memory-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s;
+  transform-style: preserve-3d;
+}
+
+.memory-card.flipped .memory-card-inner,
+.memory-card.matched .memory-card-inner {
+  transform: rotateY(180deg);
+}
+
+.memory-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  text-align: center;
+  padding: 4px;
+}
+
+.memory-face-back {
+  background: linear-gradient(160deg, var(--purple), #4c1d95);
+  border: 2px solid var(--purple-light);
+  font-size: 1.6rem;
+}
+
+.memory-face-front {
+  background: linear-gradient(160deg, var(--card-bg), #1c1044);
+  border: 2px solid var(--card-border);
+  transform: rotateY(180deg);
+  font-size: clamp(0.8rem, 4vw, 1.05rem);
+}
+
+.memory-card.matched .memory-face-front {
+  background: linear-gradient(160deg, var(--green), #0f9d6b);
+  border-color: var(--green);
+  color: #05281c;
+}
+
 /* QUIZ */
 .quiz-hud {
   display: flex;

@@ -30,6 +30,21 @@
         <span class="menu-title">Quiz contra reloj</span>
         <span class="menu-desc">Responde rápido, gana puntos</span>
       </button>
+      <button class="menu-card" data-view="view-multiple">
+        <span class="menu-icon">🎯</span>
+        <span class="menu-title">Opción múltiple</span>
+        <span class="menu-desc">Elige la respuesta correcta</span>
+      </button>
+      <button class="menu-card" data-view="view-truefalse">
+        <span class="menu-icon">✅</span>
+        <span class="menu-title">Verdadero o falso</span>
+        <span class="menu-desc">Decide rápido si es correcto</span>
+      </button>
+      <button class="menu-card" data-view="view-memory">
+        <span class="menu-icon">🧠</span>
+        <span class="menu-title">Memorama</span>
+        <span class="menu-desc">Encuentra las parejas</span>
+      </button>
       <button class="menu-card" data-view="view-grid">
         <span class="menu-icon">🎨</span>
         <span class="menu-title">Tabla pitagórica</span>
@@ -96,6 +111,95 @@
         <p class="results-score">Puntos: <strong id="finalScore">0</strong></p>
         <p class="results-detail" id="resultsDetail"></p>
         <button id="retryQuiz" class="btn-primary">🔁 Jugar otra vez</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MULTIPLE CHOICE -->
+  <section id="view-multiple" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Opción múltiple</h2>
+
+    <div id="mcSetup">
+      <p class="quiz-instructions">Elige qué tablas quieres practicar:</p>
+      <div class="table-picker multi" id="mcTablePicker"></div>
+      <button id="startMC" class="btn-primary btn-large">▶ Empezar (10 preguntas)</button>
+    </div>
+
+    <div id="mcArea" class="hidden">
+      <div class="quiz-hud">
+        <div class="hud-item">❓ <span id="mcRound">1</span>/10</div>
+        <div class="hud-item">⭐ <span id="mcScore">0</span></div>
+        <div class="hud-item">🔥 <span id="mcStreak">0</span></div>
+      </div>
+      <div class="quiz-question" id="mcQuestion">? × ? = </div>
+      <div class="option-grid" id="mcOptions"></div>
+      <div class="quiz-feedback" id="mcFeedback"></div>
+    </div>
+
+    <div id="mcResults" class="hidden">
+      <div class="results-box">
+        <h3 id="mcResultsTitle">¡Terminaste!</h3>
+        <p class="results-score">Puntos: <strong id="mcFinalScore">0</strong> / 10</p>
+        <button id="retryMC" class="btn-primary">🔁 Jugar otra vez</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUE OR FALSE -->
+  <section id="view-truefalse" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Verdadero o falso</h2>
+
+    <div id="tfSetup">
+      <p class="quiz-instructions">Elige qué tablas quieres practicar:</p>
+      <div class="table-picker multi" id="tfTablePicker"></div>
+      <button id="startTF" class="btn-primary btn-large">▶ Empezar (10 preguntas)</button>
+    </div>
+
+    <div id="tfArea" class="hidden">
+      <div class="quiz-hud">
+        <div class="hud-item">❓ <span id="tfRound">1</span>/10</div>
+        <div class="hud-item">⭐ <span id="tfScore">0</span></div>
+        <div class="hud-item">🔥 <span id="tfStreak">0</span></div>
+      </div>
+      <div class="quiz-question" id="tfQuestion">? × ? = ?</div>
+      <div class="tf-buttons">
+        <button class="btn-tf btn-tf-true" id="tfTrue">✅ Verdadero</button>
+        <button class="btn-tf btn-tf-false" id="tfFalse">❌ Falso</button>
+      </div>
+      <div class="quiz-feedback" id="tfFeedback"></div>
+    </div>
+
+    <div id="tfResults" class="hidden">
+      <div class="results-box">
+        <h3 id="tfResultsTitle">¡Terminaste!</h3>
+        <p class="results-score">Puntos: <strong id="tfFinalScore">0</strong> / 10</p>
+        <button id="retryTF" class="btn-primary">🔁 Jugar otra vez</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEMORY -->
+  <section id="view-memory" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Memorama de tablas</h2>
+    <p class="quiz-instructions">Elige una tabla para armar el memorama:</p>
+    <div class="table-picker" id="memoryTablePicker"></div>
+
+    <div id="memoryArea" class="hidden">
+      <div class="quiz-hud">
+        <div class="hud-item">🔄 <span id="memoryMoves">0</span> movimientos</div>
+        <div class="hud-item">✅ <span id="memoryMatches">0</span>/6</div>
+      </div>
+      <div class="memory-grid" id="memoryGrid"></div>
+    </div>
+
+    <div id="memoryResults" class="hidden">
+      <div class="results-box">
+        <h3>🎉 ¡Memorama completo!</h3>
+        <p class="results-detail" id="memoryDetail"></p>
+        <button id="retryMemory" class="btn-primary">🔁 Jugar otra vez</button>
       </div>
     </div>
   </section>
