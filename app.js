@@ -366,23 +366,10 @@ function makeDistractors(a, b, correct) {
 
 // ---------- Vista: Reto Final (sin tiempo, una sola vida) ----------
 const FINAL_RECORD_KEY = "tablas_final_record_v1";
-let finalTables = new Set();
-let finalActiveTables = [];
 let finalStreak = 0;
 let finalRecord = Number(localStorage.getItem(FINAL_RECORD_KEY)) || 0;
 let finalCurrent = { a: 0, b: 0 };
 let finalOver = false;
-
-const finalPicker = document.getElementById("finalTablePicker");
-buildTablePicker(finalPicker, true, (t, btn) => {
-  if (finalTables.has(t)) {
-    finalTables.delete(t);
-    btn.classList.remove("selected");
-  } else {
-    finalTables.add(t);
-    btn.classList.add("selected");
-  }
-});
 
 document.getElementById("finalRecordSetup").textContent = finalRecord;
 
@@ -395,7 +382,6 @@ document.getElementById("retryFinal").addEventListener("click", () => {
 });
 
 function startFinal() {
-  finalActiveTables = finalTables.size > 0 ? [...finalTables] : TABLES;
   finalStreak = 0;
   finalOver = false;
 
@@ -422,7 +408,7 @@ function startFinal() {
 }
 
 function nextFinalQuestion() {
-  const table = finalActiveTables[Math.floor(Math.random() * finalActiveTables.length)];
+  const table = TABLES[Math.floor(Math.random() * TABLES.length)];
   const factor = FACTORS[Math.floor(Math.random() * FACTORS.length)];
   finalCurrent = { a: table, b: factor };
   document.getElementById("finalQuestion").textContent = `${table} × ${factor} = ?`;
