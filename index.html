@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¡Tablas al Ataque! 🚀 Aprende multiplicar jugando</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="stars-bg" id="starsBg"></div>
+
+<header class="app-header">
+  <h1>🚀 ¡Tablas al Ataque!</h1>
+  <p class="subtitle">Aprende las tablas de multiplicar fácil y divertido</p>
+</header>
+
+<main id="app">
+
+  <!-- HOME -->
+  <section id="view-home" class="view active">
+    <div class="menu-grid">
+      <button class="menu-card" data-view="view-practice">
+        <span class="menu-icon">🃏</span>
+        <span class="menu-title">Practicar</span>
+        <span class="menu-desc">Tarjetas con trucos por tabla</span>
+      </button>
+      <button class="menu-card" data-view="view-quiz">
+        <span class="menu-icon">⏱️</span>
+        <span class="menu-title">Quiz contra reloj</span>
+        <span class="menu-desc">Responde rápido, gana puntos</span>
+      </button>
+      <button class="menu-card" data-view="view-grid">
+        <span class="menu-icon">🎨</span>
+        <span class="menu-title">Tabla pitagórica</span>
+        <span class="menu-desc">Descubre los patrones</span>
+      </button>
+      <button class="menu-card" data-view="view-progress">
+        <span class="menu-icon">🏆</span>
+        <span class="menu-title">Mi progreso</span>
+        <span class="menu-desc">Estrellas por cada tabla</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- PRACTICE -->
+  <section id="view-practice" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Practicar tabla</h2>
+    <div class="table-picker" id="practiceTablePicker"></div>
+
+    <div id="practiceArea" class="hidden">
+      <div class="trick-box" id="trickBox"></div>
+
+      <div class="flashcard" id="flashcard">
+        <div class="flashcard-inner" id="flashcardInner">
+          <div class="flashcard-face flashcard-front" id="cardFront"></div>
+          <div class="flashcard-face flashcard-back" id="cardBack"></div>
+        </div>
+      </div>
+      <p class="hint">👆 Toca la tarjeta para ver la respuesta</p>
+
+      <div class="nav-buttons">
+        <button id="prevCard" class="btn-secondary">◀ Anterior</button>
+        <span id="cardCounter" class="card-counter"></span>
+        <button id="nextCard" class="btn-primary">Siguiente ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="view-quiz" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Quiz contra reloj</h2>
+
+    <div id="quizSetup">
+      <p class="quiz-instructions">Elige qué tablas quieres practicar:</p>
+      <div class="table-picker multi" id="quizTablePicker"></div>
+      <button id="startQuiz" class="btn-primary btn-large">▶ Empezar quiz (30s)</button>
+    </div>
+
+    <div id="quizArea" class="hidden">
+      <div class="quiz-hud">
+        <div class="hud-item">⏳ <span id="quizTimer">30</span>s</div>
+        <div class="hud-item">⭐ <span id="quizScore">0</span></div>
+        <div class="hud-item">🔥 <span id="quizStreak">0</span></div>
+      </div>
+      <div class="quiz-question" id="quizQuestion">? × ? = </div>
+      <input type="number" id="quizAnswer" class="quiz-input" inputmode="numeric" autocomplete="off" placeholder="?">
+      <div class="quiz-feedback" id="quizFeedback"></div>
+    </div>
+
+    <div id="quizResults" class="hidden">
+      <div class="results-box">
+        <h3 id="resultsTitle">¡Tiempo!</h3>
+        <p class="results-score">Puntos: <strong id="finalScore">0</strong></p>
+        <p class="results-detail" id="resultsDetail"></p>
+        <button id="retryQuiz" class="btn-primary">🔁 Jugar otra vez</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GRID -->
+  <section id="view-grid" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Tabla pitagórica</h2>
+    <p class="quiz-instructions">Pasa el dedo o el ratón para descubrir cada resultado. ¡Fíjate en los patrones y colores!</p>
+    <div class="grid-wrap">
+      <table class="pitagorica" id="pitagoricaTable"></table>
+    </div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="view-progress" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Mi progreso</h2>
+    <p class="quiz-instructions">Gana estrellas acertando preguntas de cada tabla en el Quiz.</p>
+    <div class="progress-grid" id="progressGrid"></div>
+    <button id="resetProgress" class="btn-secondary btn-small">Reiniciar progreso</button>
+  </section>
+
+</main>
+
+<footer class="app-footer">Hecho con 💚 para dominar las tablas</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
