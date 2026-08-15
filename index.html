@@ -26,6 +26,11 @@
         <span class="menu-title">Practicar</span>
         <span class="menu-desc">Tarjetas con trucos por tabla</span>
       </button>
+      <button class="menu-card" data-view="view-smart">
+        <span class="menu-icon">🎓</span>
+        <span class="menu-title">Repaso Inteligente</span>
+        <span class="menu-desc">Repite lo que más se te dificulta</span>
+      </button>
       <button class="menu-card" data-view="view-quiz">
         <span class="menu-icon">⏱️</span>
         <span class="menu-title">Quiz contra reloj</span>
@@ -85,6 +90,40 @@
         <button id="prevCard" class="btn-secondary">◀ Anterior</button>
         <span id="cardCounter" class="card-counter"></span>
         <button id="nextCard" class="btn-primary">Siguiente ▶</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SMART REVIEW (repetición espaciada) -->
+  <section id="view-smart" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Repaso Inteligente</h2>
+
+    <div id="smartIntro">
+      <p class="quiz-instructions">Este modo detecta las multiplicaciones que más se te dificultan y te las repite más seguido, mientras espacia las que ya dominas. Funciona mejor mientras más lo uses.</p>
+      <p class="final-record">🎓 Dominio general: <strong id="smartMasteryIntro">0%</strong></p>
+      <button id="startSmart" class="btn-primary btn-large">▶ Empezar repaso</button>
+    </div>
+
+    <div id="smartArea" class="hidden">
+      <div class="quiz-hud">
+        <div class="hud-item">✅ <span id="smartCorrect">0</span></div>
+        <div class="hud-item">🎓 <span id="smartMastery">0%</span></div>
+        <div class="hud-item">🔥 <span id="smartStreak">0</span></div>
+      </div>
+      <div class="smart-tag" id="smartTag"></div>
+      <div class="quiz-question" id="smartQuestion">? × ? = </div>
+      <input type="number" id="smartAnswer" class="quiz-input" inputmode="numeric" autocomplete="off" placeholder="?">
+      <div class="quiz-feedback" id="smartFeedback"></div>
+      <button id="endSmart" class="btn-secondary btn-small">⏹ Terminar repaso</button>
+    </div>
+
+    <div id="smartResults" class="hidden">
+      <div class="results-box">
+        <h3>📊 ¡Buen repaso!</h3>
+        <p class="results-score">Respuestas correctas: <strong id="smartFinalCorrect">0</strong></p>
+        <p class="results-detail" id="smartFinalDetail"></p>
+        <button id="retrySmart" class="btn-primary">🔁 Repasar de nuevo</button>
       </div>
     </div>
   </section>

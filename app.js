@@ -364,6 +364,187 @@ function makeDistractors(a, b, correct) {
   return pool.slice(0, 3);
 }
 
+// ---------- Vista: Repaso Inteligente (repetición espaciada) ----------
+const FACT_STATS_KEY = "tablas_fact_stats_v1";
+const MAX_BOX = 5;
+
+function loadFactStats() {
+  try {
+    return JSON.parse(localStorage.getItem(FACT_STATS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveFactStats(stats) {
+  localStorage.setItem(FACT_STATS_KEY, JSON.stringify(stats));
+}
+
+function factKey(a, b) {
+  return `${a}x${b}`;
+}
+
+function getFactBox(stats, a, b) {
+  const entry = stats[factKey(a, b)];
+  return entry ? entry.box : 1;
+}
+
+function updateFactStats(stats, a, b, isCorrect) {
+  const key = factKey(a, b);
+  const entry = stats[key] || { box: 1, correct: 0, wrong: 0 };
+  if (isCorrect) {
+    entry.box = Math.min(MAX_BOX, entry.box + 1);
+    entry.correct += 1;
+  } else {
+    entry.box = 1;
+    entry.wrong += 1;
+  }
+  stats[key] = entry;
+  saveFactStats(stats);
+}
+
+function computeMastery(stats) {
+  let mastered = 0;
+  TABLES.forEach(a => FACTORS.forEach(b => {
+    if (getFactBox(stats, a, b) >= MAX_BOX) mastered += 1;
+  }));
+  return Math.round((mastered / (TABLES.length * FACTORS.length)) * 100);
+}
+
+function pickWeightedFact(stats) {
+  const items = [];
+  TABLES.forEach(a => FACTORS.forEach(b => {
+    const box = getFactBox(stats, a, b);
+    items.push({ a, b, weight: MAX_BOX - box + 1 });
+  }));
+  const totalWeight = items.reduce((sum, it) => sum + it.weight, 0);
+  let r = Math.random() * totalWeight;
+  for (const it of items) {
+    r -= it.weight;
+    if (r <= 0) return it;
+  }
+  return items[items.length - 1];
+}
+
+let smartStats = {};
+let smartCorrectCount = 0;
+let smartStreak = 0;
+let smartCurrent = { a: 0, b: 0 };
+let smartLastKey = null;
+
+document.getElementById("smartMasteryIntro").textContent = computeMastery(loadFactStats()) + "%";
+
+document.getElementById("startSmart").addEventListener("click", () => { Sound.click(); startSmart(); });
+document.getElementById("endSmart").addEventListener("click", () => { Sound.click(); finishSmart(); });
+document.getElementById("retrySmart").addEventListener("click", () => {
+  Sound.click();
+  document.getElementById("smartResults").classList.add("hidden");
+  document.getElementById("smartIntro").classList.remove("hidden");
+  document.getElementById("smartMasteryIntro").textContent = computeMastery(loadFactStats()) + "%";
+});
+
+function startSmart() {
+  smartStats = loadFactStats();
+  smartCorrectCount = 0;
+  smartStreak = 0;
+  smartLastKey = null;
+
+  document.getElementById("smartIntro").classList.add("hidden");
+  document.getElementById("smartResults").classList.add("hidden");
+  document.getElementById("smartArea").classList.remove("hidden");
+  document.getElementById("smartCorrect").textContent = "0";
+  document.getElementById("smartStreak").textContent = "0";
+  document.getElementById("smartMastery").textContent = computeMastery(smartStats) + "%";
+
+  nextSmartQuestion();
+
+  const answerInput = document.getElementById("smartAnswer");
+  answerInput.value = "";
+  answerInput.focus();
+  answerInput.onkeydown = (e) => {
+    if (e.key === "Enter") checkSmartAnswer();
+  };
+  answerInput.oninput = () => {
+    const val = answerInput.value;
+    if (val !== "" && val.length >= String(smartCurrent.a * smartCurrent.b).length) {
+      checkSmartAnswer();
+    }
+  };
+}
+
+function nextSmartQuestion() {
+  let pick = pickWeightedFact(smartStats);
+  let tries = 0;
+  while (factKey(pick.a, pick.b) === smartLastKey && tries < 5) {
+    pick = pickWeightedFact(smartStats);
+    tries += 1;
+  }
+  smartCurrent = { a: pick.a, b: pick.b };
+  smartLastKey = factKey(pick.a, pick.b);
+
+  const entry = smartStats[smartLastKey];
+  const tagEl = document.getElementById("smartTag");
+  if (!entry) {
+    tagEl.textContent = "🆕 Nueva";
+    tagEl.className = "smart-tag smart-tag-new";
+  } else if (entry.box <= 2) {
+    tagEl.textContent = "⚠️ Repasando";
+    tagEl.className = "smart-tag smart-tag-weak";
+  } else if (entry.box < MAX_BOX) {
+    tagEl.textContent = "📈 Mejorando";
+    tagEl.className = "smart-tag smart-tag-mid";
+  } else {
+    tagEl.textContent = "✅ Casi dominada";
+    tagEl.className = "smart-tag smart-tag-strong";
+  }
+
+  document.getElementById("smartQuestion").textContent = `${pick.a} × ${pick.b} = ?`;
+  document.getElementById("smartAnswer").value = "";
+  const feedback = document.getElementById("smartFeedback");
+  feedback.textContent = "";
+  feedback.className = "quiz-feedback";
+}
+
+function checkSmartAnswer() {
+  const input = document.getElementById("smartAnswer");
+  if (input.value === "") return;
+
+  const val = Number(input.value);
+  const correctVal = smartCurrent.a * smartCurrent.b;
+  const isCorrect = val === correctVal;
+  recordAnswer(smartCurrent.a, isCorrect);
+  updateFactStats(smartStats, smartCurrent.a, smartCurrent.b, isCorrect);
+
+  const feedback = document.getElementById("smartFeedback");
+  if (isCorrect) {
+    Sound.correct();
+    smartCorrectCount += 1;
+    smartStreak += 1;
+    feedback.textContent = "¡Correcto! ✅";
+    feedback.className = "quiz-feedback correct";
+  } else {
+    Sound.wrong();
+    smartStreak = 0;
+    feedback.textContent = `Era ${correctVal}. La repasaremos pronto 🔁`;
+    feedback.className = "quiz-feedback wrong";
+  }
+  document.getElementById("smartCorrect").textContent = smartCorrectCount;
+  document.getElementById("smartStreak").textContent = smartStreak;
+  document.getElementById("smartMastery").textContent = computeMastery(smartStats) + "%";
+
+  setTimeout(nextSmartQuestion, isCorrect ? 500 : 1100);
+}
+
+function finishSmart() {
+  document.getElementById("smartArea").classList.add("hidden");
+  document.getElementById("smartResults").classList.remove("hidden");
+  document.getElementById("smartFinalCorrect").textContent = smartCorrectCount;
+  const mastery = computeMastery(smartStats);
+  document.getElementById("smartFinalDetail").textContent =
+    `Tu dominio general de las tablas es ${mastery}%. ¡Sigue repasando para subirlo!`;
+  renderProgress();
+}
+
 // ---------- Vista: Reto Final (sin tiempo, una sola vida) ----------
 const FINAL_RECORD_KEY = "tablas_final_record_v1";
 let finalStreak = 0;
