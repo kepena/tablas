@@ -76,6 +76,45 @@ soundToggleBtn.addEventListener("click", () => {
 });
 updateSoundToggleUI();
 
+// ---------- Contador de tiempo de estudio ----------
+const STUDY_TIME_KEY = "tablas_study_seconds_v1";
+let studySeconds = Number(localStorage.getItem(STUDY_TIME_KEY)) || 0;
+
+function formatStudyTime(totalSeconds) {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}min`;
+  if (minutes > 0) return `${minutes}min ${seconds}s`;
+  return `${seconds}s`;
+}
+
+function persistStudyTime() {
+  localStorage.setItem(STUDY_TIME_KEY, String(studySeconds));
+}
+
+function updateStudyTimeDisplays() {
+  const text = formatStudyTime(studySeconds);
+  const bannerEl = document.getElementById("studyTimeText");
+  if (bannerEl) bannerEl.textContent = text;
+  const progressEl = document.getElementById("studyTimeProgress");
+  if (progressEl) progressEl.textContent = text;
+}
+
+setInterval(() => {
+  if (document.hidden) return;
+  studySeconds += 1;
+  if (studySeconds % 5 === 0) persistStudyTime();
+  updateStudyTimeDisplays();
+}, 1000);
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) persistStudyTime();
+});
+window.addEventListener("beforeunload", persistStudyTime);
+
+updateStudyTimeDisplays();
+
 // ---------- Navegación entre vistas ----------
 function showView(id) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));

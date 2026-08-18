@@ -20,6 +20,9 @@
 
   <!-- HOME -->
   <section id="view-home" class="view active">
+    <div class="study-time-banner" id="studyTimeBanner">
+      ⏳ Tiempo total estudiando: <strong id="studyTimeText">0s</strong>
+    </div>
     <div class="menu-grid">
       <button class="menu-card" data-view="view-practice">
         <span class="menu-icon">🃏</span>
@@ -296,6 +299,7 @@
     <button class="btn-back" data-view="view-home">← Volver</button>
     <h2>Mi progreso</h2>
     <p class="quiz-instructions">Gana estrellas acertando preguntas de cada tabla en el Quiz.</p>
+    <p class="final-record">⏳ Tiempo total estudiando: <strong id="studyTimeProgress">0s</strong></p>
     <div class="progress-grid" id="progressGrid"></div>
     <button id="resetProgress" class="btn-secondary btn-small">Reiniciar progreso</button>
   </section>
