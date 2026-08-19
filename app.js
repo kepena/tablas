@@ -249,10 +249,35 @@ function renderProgress() {
   });
 }
 
+function resetAllGameViewStates() {
+  ["quizArea", "finalArea", "mcArea", "tfArea", "smartArea", "memoryArea", "practiceArea",
+   "quizResults", "finalResults", "mcResults", "tfResults", "smartResults", "memoryResults"]
+    .forEach(id => { const el = document.getElementById(id); if (el) el.classList.add("hidden"); });
+
+  ["quizSetup", "finalSetup", "mcSetup", "tfSetup", "smartIntro"]
+    .forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove("hidden"); });
+}
+
 document.getElementById("resetProgress").addEventListener("click", () => {
   Sound.click();
-  if (confirm("¿Seguro que quieres borrar todo tu progreso?")) {
+  if (confirm("¿Seguro que quieres borrar TODO tu progreso? Esto incluye estrellas, el Repaso Inteligente, el récord del Reto Final y el tiempo de estudio. No se puede deshacer.")) {
     localStorage.removeItem(PROGRESS_KEY);
+    localStorage.removeItem(FACT_STATS_KEY);
+    localStorage.removeItem(FINAL_RECORD_KEY);
+    localStorage.removeItem(STUDY_DAILY_KEY);
+
+    finalRecord = 0;
+    document.getElementById("finalRecordSetup").textContent = finalRecord;
+
+    studyDaily = {};
+    studyTodayKey = todayKey();
+    studyDaily[studyTodayKey] = 0;
+    updateStudyTimeDisplays();
+    renderDailyStudy();
+
+    document.getElementById("smartMasteryIntro").textContent = "0%";
+
+    resetAllGameViewStates();
     renderProgress();
   }
 });
