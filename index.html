@@ -14,15 +14,13 @@
   <button id="soundToggle" class="sound-toggle" aria-label="Silenciar sonidos">🔊</button>
   <h1>🚀 ¡Tablas al Ataque!</h1>
   <p class="subtitle">Aprende las tablas de multiplicar fácil y divertido</p>
+  <div class="study-time-banner" id="studyTimeBanner">⏳ Hoy: <strong id="studyTimeToday">0s</strong></div>
 </header>
 
 <main id="app">
 
   <!-- HOME -->
   <section id="view-home" class="view active">
-    <div class="study-time-banner" id="studyTimeBanner">
-      ⏳ Tiempo total estudiando: <strong id="studyTimeText">0s</strong>
-    </div>
     <div class="menu-grid">
       <button class="menu-card" data-view="view-practice">
         <span class="menu-icon">🃏</span>
@@ -299,7 +297,11 @@
     <button class="btn-back" data-view="view-home">← Volver</button>
     <h2>Mi progreso</h2>
     <p class="quiz-instructions">Gana estrellas acertando preguntas de cada tabla en el Quiz.</p>
-    <p class="final-record">⏳ Tiempo total estudiando: <strong id="studyTimeProgress">0s</strong></p>
+    <p class="final-record">⏳ Tiempo total acumulado: <strong id="studyTimeProgress">0s</strong></p>
+
+    <p class="quiz-instructions">Tiempo de estudio de los últimos 7 días:</p>
+    <div class="daily-study-list" id="dailyStudyList"></div>
+
     <div class="progress-grid" id="progressGrid"></div>
     <button id="resetProgress" class="btn-secondary btn-small">Reiniciar progreso</button>
   </section>

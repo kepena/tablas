@@ -88,6 +88,21 @@ html, body {
   font-size: 1rem;
 }
 
+.study-time-banner {
+  display: inline-block;
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 999px;
+  padding: 6px 16px;
+  margin-top: 12px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.study-time-banner strong {
+  color: var(--yellow);
+}
+
 #app {
   position: relative;
   z-index: 1;
@@ -520,6 +535,49 @@ table.pitagorica td.highlight {
   background: var(--pink);
   color: white;
   transform: scale(1.12);
+}
+
+/* DAILY STUDY TIME */
+.daily-study-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.daily-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 70px;
+  align-items: center;
+  gap: 10px;
+}
+
+.daily-label {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.daily-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  overflow: hidden;
+}
+
+.daily-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+}
+
+.daily-value {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: right;
 }
 
 /* PROGRESS */

@@ -77,8 +77,36 @@ soundToggleBtn.addEventListener("click", () => {
 updateSoundToggleUI();
 
 // ---------- Contador de tiempo de estudio ----------
-const STUDY_TIME_KEY = "tablas_study_seconds_v1";
-let studySeconds = Number(localStorage.getItem(STUDY_TIME_KEY)) || 0;
+// Solo cuenta mientras hay una actividad real abierta (no en el menú ni en
+// "Mi progreso") Y hubo una interacción (clic, tecla, respuesta) en los
+// últimos 5 segundos. Dejar la app abierta sin tocarla no suma tiempo.
+const STUDY_DAILY_KEY = "tablas_study_daily_v1";
+const IDLE_LIMIT_MS = 5000;
+const ACTIVE_STUDY_VIEWS = new Set([
+  "view-practice", "view-smart", "view-quiz", "view-final",
+  "view-multiple", "view-truefalse", "view-memory", "view-grid",
+]);
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function loadDailyStudy() {
+  try {
+    return JSON.parse(localStorage.getItem(STUDY_DAILY_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDailyStudy() {
+  localStorage.setItem(STUDY_DAILY_KEY, JSON.stringify(studyDaily));
+}
+
+function totalStudySeconds() {
+  return Object.values(studyDaily).reduce((sum, s) => sum + s, 0);
+}
 
 function formatStudyTime(totalSeconds) {
   const hours = Math.floor(totalSeconds / 3600);
@@ -89,29 +117,69 @@ function formatStudyTime(totalSeconds) {
   return `${seconds}s`;
 }
 
-function persistStudyTime() {
-  localStorage.setItem(STUDY_TIME_KEY, String(studySeconds));
-}
+let studyDaily = loadDailyStudy();
+let studyTodayKey = todayKey();
+if (!studyDaily[studyTodayKey]) studyDaily[studyTodayKey] = 0;
+let currentViewId = "view-home";
+let lastActivityAt = Date.now();
+
+["click", "keydown", "input", "touchstart"].forEach(evt => {
+  document.addEventListener(evt, () => { lastActivityAt = Date.now(); }, { passive: true });
+});
 
 function updateStudyTimeDisplays() {
-  const text = formatStudyTime(studySeconds);
-  const bannerEl = document.getElementById("studyTimeText");
-  if (bannerEl) bannerEl.textContent = text;
-  const progressEl = document.getElementById("studyTimeProgress");
-  if (progressEl) progressEl.textContent = text;
+  const todayEl = document.getElementById("studyTimeToday");
+  if (todayEl) todayEl.textContent = formatStudyTime(studyDaily[studyTodayKey] || 0);
+  const totalEl = document.getElementById("studyTimeProgress");
+  if (totalEl) totalEl.textContent = formatStudyTime(totalStudySeconds());
+}
+
+function renderDailyStudy() {
+  const container = document.getElementById("dailyStudyList");
+  if (!container) return;
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("es-ES", { weekday: "short", day: "numeric" });
+    days.push({ label, seconds: studyDaily[key] || 0 });
+  }
+  const maxSeconds = Math.max(1, ...days.map(d => d.seconds));
+
+  container.innerHTML = "";
+  days.forEach(d => {
+    const row = document.createElement("div");
+    row.className = "daily-row";
+    const pct = Math.round((d.seconds / maxSeconds) * 100);
+    row.innerHTML = `
+      <span class="daily-label">${d.label}</span>
+      <div class="daily-bar-track"><div class="daily-bar-fill" style="width:${pct}%"></div></div>
+      <span class="daily-value">${formatStudyTime(d.seconds)}</span>
+    `;
+    container.appendChild(row);
+  });
 }
 
 setInterval(() => {
   if (document.hidden) return;
-  studySeconds += 1;
-  if (studySeconds % 5 === 0) persistStudyTime();
+  if (!ACTIVE_STUDY_VIEWS.has(currentViewId)) return;
+  if (Date.now() - lastActivityAt > IDLE_LIMIT_MS) return;
+
+  const key = todayKey();
+  if (key !== studyTodayKey) {
+    studyTodayKey = key;
+    if (!studyDaily[studyTodayKey]) studyDaily[studyTodayKey] = 0;
+  }
+  studyDaily[studyTodayKey] += 1;
+  if (studyDaily[studyTodayKey] % 5 === 0) saveDailyStudy();
   updateStudyTimeDisplays();
 }, 1000);
 
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) persistStudyTime();
+  if (document.hidden) saveDailyStudy();
 });
-window.addEventListener("beforeunload", persistStudyTime);
+window.addEventListener("beforeunload", saveDailyStudy);
 
 updateStudyTimeDisplays();
 
@@ -119,6 +187,11 @@ updateStudyTimeDisplays();
 function showView(id) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+  currentViewId = id;
+  if (id === "view-progress") {
+    renderProgress();
+    renderDailyStudy();
+  }
 }
 
 document.querySelectorAll("[data-view]").forEach(el => {
@@ -443,11 +516,15 @@ function updateFactStats(stats, a, b, isCorrect) {
 }
 
 function computeMastery(stats) {
-  let mastered = 0;
+  // Crédito parcial por cada nivel avanzado (no solo por llegar al máximo),
+  // para que el progreso real se refleje aunque ninguna combinación haya
+  // llegado todavía a la caja 5.
+  let progress = 0;
   TABLES.forEach(a => FACTORS.forEach(b => {
-    if (getFactBox(stats, a, b) >= MAX_BOX) mastered += 1;
+    progress += getFactBox(stats, a, b) - 1;
   }));
-  return Math.round((mastered / (TABLES.length * FACTORS.length)) * 100);
+  const maxProgress = TABLES.length * FACTORS.length * (MAX_BOX - 1);
+  return Math.round((progress / maxProgress) * 100);
 }
 
 function pickWeightedFact(stats) {
