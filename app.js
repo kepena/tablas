@@ -83,7 +83,7 @@ updateSoundToggleUI();
 const STUDY_DAILY_KEY = "tablas_study_daily_v1";
 const IDLE_LIMIT_MS = 5000;
 const ACTIVE_STUDY_VIEWS = new Set([
-  "view-practice", "view-smart", "view-quiz", "view-final",
+  "view-practice", "view-smart", "view-write", "view-quiz", "view-final",
   "view-multiple", "view-truefalse", "view-memory", "view-grid",
 ]);
 
@@ -250,11 +250,11 @@ function renderProgress() {
 }
 
 function resetAllGameViewStates() {
-  ["quizArea", "finalArea", "mcArea", "tfArea", "smartArea", "memoryArea", "practiceArea",
-   "quizResults", "finalResults", "mcResults", "tfResults", "smartResults", "memoryResults"]
+  ["quizArea", "finalArea", "mcArea", "tfArea", "smartArea", "writeArea", "memoryArea", "practiceArea",
+   "quizResults", "finalResults", "mcResults", "tfResults", "smartResults", "writeResults", "memoryResults"]
     .forEach(id => { const el = document.getElementById(id); if (el) el.classList.add("hidden"); });
 
-  ["quizSetup", "finalSetup", "mcSetup", "tfSetup", "smartIntro"]
+  ["quizSetup", "finalSetup", "mcSetup", "tfSetup", "smartIntro", "writeSetup"]
     .forEach(id => { const el = document.getElementById(id); if (el) el.classList.remove("hidden"); });
 }
 
@@ -683,6 +683,131 @@ function finishSmart() {
   const mastery = computeMastery(smartStats);
   document.getElementById("smartFinalDetail").textContent =
     `Tu dominio general de las tablas es ${mastery}%. ¡Sigue repasando para subirlo!`;
+  renderProgress();
+}
+
+// ---------- Vista: Repaso Escrito (sin tiempo, sin vidas) ----------
+let writeTables = new Set();
+let writeQueue = [];
+let writeCorrectCount = 0;
+let writeTotalCount = 0;
+let writeStreak = 0;
+let writeCurrent = { a: 0, b: 0 };
+
+const writePicker = document.getElementById("writeTablePicker");
+buildTablePicker(writePicker, true, (t, btn) => {
+  if (writeTables.has(t)) {
+    writeTables.delete(t);
+    btn.classList.remove("selected");
+  } else {
+    writeTables.add(t);
+    btn.classList.add("selected");
+  }
+});
+
+function buildWriteQueue(tables) {
+  const pairs = [];
+  tables.forEach(a => FACTORS.forEach(b => pairs.push({ a, b })));
+  for (let i = pairs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+  }
+  return pairs;
+}
+
+document.getElementById("startWrite").addEventListener("click", () => { Sound.click(); startWrite(); });
+document.getElementById("endWrite").addEventListener("click", () => { Sound.click(); finishWrite(false); });
+document.getElementById("retryWrite").addEventListener("click", () => {
+  Sound.click();
+  document.getElementById("writeResults").classList.add("hidden");
+  document.getElementById("writeSetup").classList.remove("hidden");
+});
+
+function startWrite() {
+  const activeTables = writeTables.size > 0 ? [...writeTables] : TABLES;
+  writeQueue = buildWriteQueue(activeTables);
+  writeCorrectCount = 0;
+  writeTotalCount = 0;
+  writeStreak = 0;
+
+  document.getElementById("writeSetup").classList.add("hidden");
+  document.getElementById("writeResults").classList.add("hidden");
+  document.getElementById("writeArea").classList.remove("hidden");
+  document.getElementById("writeCorrect").textContent = "0";
+  document.getElementById("writeTotal").textContent = "0";
+  document.getElementById("writeStreak").textContent = "0";
+
+  nextWriteQuestion();
+
+  const answerInput = document.getElementById("writeAnswer");
+  answerInput.value = "";
+  answerInput.focus();
+  answerInput.onkeydown = (e) => {
+    if (e.key === "Enter") checkWriteAnswer();
+  };
+  answerInput.oninput = () => {
+    const val = answerInput.value;
+    if (val !== "" && val.length >= String(writeCurrent.a * writeCurrent.b).length) {
+      checkWriteAnswer();
+    }
+  };
+}
+
+function nextWriteQuestion() {
+  if (writeQueue.length === 0) {
+    finishWrite(true);
+    return;
+  }
+  const { a, b } = writeQueue.pop();
+  writeCurrent = { a, b };
+  document.getElementById("writeQuestion").textContent = `${a} × ${b} = ?`;
+  document.getElementById("writeAnswer").value = "";
+  const feedback = document.getElementById("writeFeedback");
+  feedback.textContent = "";
+  feedback.className = "quiz-feedback";
+}
+
+function checkWriteAnswer() {
+  const input = document.getElementById("writeAnswer");
+  if (input.value === "") return;
+
+  const val = Number(input.value);
+  const correctVal = writeCurrent.a * writeCurrent.b;
+  const isCorrect = val === correctVal;
+  recordAnswer(writeCurrent.a, isCorrect);
+  writeTotalCount += 1;
+
+  const feedback = document.getElementById("writeFeedback");
+  if (isCorrect) {
+    Sound.correct();
+    writeCorrectCount += 1;
+    writeStreak += 1;
+    feedback.textContent = "¡Correcto! ✅";
+    feedback.className = "quiz-feedback correct";
+  } else {
+    Sound.wrong();
+    writeStreak = 0;
+    feedback.textContent = `Era ${correctVal}`;
+    feedback.className = "quiz-feedback wrong";
+  }
+  document.getElementById("writeCorrect").textContent = writeCorrectCount;
+  document.getElementById("writeTotal").textContent = writeTotalCount;
+  document.getElementById("writeStreak").textContent = writeStreak;
+
+  setTimeout(nextWriteQuestion, isCorrect ? 500 : 1100);
+}
+
+function finishWrite(completed) {
+  document.getElementById("writeArea").classList.add("hidden");
+  document.getElementById("writeResults").classList.remove("hidden");
+  document.getElementById("writeFinalCorrect").textContent = writeCorrectCount;
+  document.getElementById("writeFinalTotal").textContent = writeTotalCount;
+
+  const pct = writeTotalCount > 0 ? Math.round((writeCorrectCount / writeTotalCount) * 100) : 0;
+  document.getElementById("writeResultsTitle").textContent = completed ? "🎉 ¡Repasaste todas!" : "📝 ¡Buen repaso!";
+  document.getElementById("writeResultsDetail").textContent =
+    `Acertaste ${pct}% de las preguntas.` + (completed ? " Repasaste todas las combinaciones elegidas." : "");
+
   renderProgress();
 }
 

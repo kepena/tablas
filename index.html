@@ -32,6 +32,11 @@
         <span class="menu-title">Repaso Inteligente</span>
         <span class="menu-desc">Repite lo que más se te dificulta</span>
       </button>
+      <button class="menu-card" data-view="view-write">
+        <span class="menu-icon">✍️</span>
+        <span class="menu-title">Repaso Escrito</span>
+        <span class="menu-desc">Escribe la respuesta, sin tiempo</span>
+      </button>
       <button class="menu-card" data-view="view-quiz">
         <span class="menu-icon">⏱️</span>
         <span class="menu-title">Quiz contra reloj</span>
@@ -125,6 +130,39 @@
         <p class="results-score">Respuestas correctas: <strong id="smartFinalCorrect">0</strong></p>
         <p class="results-detail" id="smartFinalDetail"></p>
         <button id="retrySmart" class="btn-primary">🔁 Repasar de nuevo</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- WRITTEN REVIEW (sin tiempo, sin vidas) -->
+  <section id="view-write" class="view">
+    <button class="btn-back" data-view="view-home">← Volver</button>
+    <h2>Repaso Escrito</h2>
+
+    <div id="writeSetup">
+      <p class="quiz-instructions">Sin cronómetro y sin vidas: escribe la respuesta de cada multiplicación a tu ritmo. Elige qué tablas quieres repasar:</p>
+      <div class="table-picker multi" id="writeTablePicker"></div>
+      <button id="startWrite" class="btn-primary btn-large">▶ Empezar repaso</button>
+    </div>
+
+    <div id="writeArea" class="hidden">
+      <div class="quiz-hud">
+        <div class="hud-item">✅ <span id="writeCorrect">0</span></div>
+        <div class="hud-item">📝 <span id="writeTotal">0</span></div>
+        <div class="hud-item">🔥 <span id="writeStreak">0</span></div>
+      </div>
+      <div class="quiz-question" id="writeQuestion">? × ? = </div>
+      <input type="number" id="writeAnswer" class="quiz-input" inputmode="numeric" autocomplete="off" placeholder="?">
+      <div class="quiz-feedback" id="writeFeedback"></div>
+      <button id="endWrite" class="btn-secondary btn-small">⏹ Terminar repaso</button>
+    </div>
+
+    <div id="writeResults" class="hidden">
+      <div class="results-box">
+        <h3 id="writeResultsTitle">📝 ¡Buen repaso!</h3>
+        <p class="results-score">Correctas: <strong id="writeFinalCorrect">0</strong> / <strong id="writeFinalTotal">0</strong></p>
+        <p class="results-detail" id="writeResultsDetail"></p>
+        <button id="retryWrite" class="btn-primary">🔁 Repasar de nuevo</button>
       </div>
     </div>
   </section>
